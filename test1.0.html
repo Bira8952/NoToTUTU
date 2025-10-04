@@ -1,0 +1,2732 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Einsatzplanung</title>
+<style>
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    -webkit-touch-callout: none;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #f5f7fa;
+    color: #2c3e50;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    padding: 10px;
+    padding-top: max(10px, env(safe-area-inset-top));
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+    line-height: 1.4;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+
+  .alert {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+  }
+  .alert::before {
+    content: "⚠ ";
+    margin-right: 8px;
+    font-size: 16px;
+  }
+  .alert a {
+    color: #0066cc;
+    text-decoration: underline;
+  }
+
+  h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin: 10px 0 8px 0;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 6px;
+  }
+
+  .einsatzplan-dashboard-container {
+    display: flex;
+    gap: 15px;
+    align-items: stretch;
+    margin-bottom: 10px;
+    min-height: 280px;
+  }
+
+  .einsatzplan-wrapper {
+    flex: 0 0 45%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dashboard-wrapper {
+    flex: 0 0 53%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    margin-top: 50px;
+  }
+
+  .table-wrapper {
+    flex: 1 1 auto;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background: white;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+  }
+
+  .einsatzplan-header {
+    background: #4a90e2;
+    color: white;
+  }
+  .einsatzplan-header th {
+    padding: 10px 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+  }
+
+  .pools-header {
+    background: #4a90e2;
+    color: white;
+  }
+  .pools-header th {
+    padding: 8px 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    text-align: center;
+  }
+  .pools-header th:first-child {
+    text-align: left;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+  }
+  tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  tbody tr.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+  }
+  tbody tr.drag-over {
+    border-top: 3px solid #4a90e2;
+  }
+
+  td {
+    padding: 8px 12px;
+    vertical-align: middle;
+    font-size: 13px;
+  }
+
+  .pools-table td {
+    padding: 6px 8px;
+    text-align: center;
+    font-size: 11px;
+  }
+  .pools-table td:first-child {
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .drag-handle {
+    color: #999;
+    cursor: grab;
+    font-size: 14px;
+    margin-right: 4px;
+    padding: 4px;
+    transition: color 0.2s ease;
+  }
+  .drag-handle:hover {
+    color: #4a90e2;
+  }
+  .drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .pool-badge {
+    background: #f39c12;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 11px;
+    min-width: 50px;
+    text-align: center;
+    display: inline-block;
+  }
+
+  .schicht-frueh {
+    background: #4a90e2;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 12px;
+    min-width: 70px;
+    text-align: center;
+    display: inline-block;
+    cursor: pointer;
+  }
+
+  .schicht-spat {
+    background: #17a2b8;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 12px;
+    min-width: 70px;
+    text-align: center;
+    display: inline-block;
+    cursor: pointer;
+  }
+
+  .schicht-taeti {
+    background: #e67e22;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 12px;
+    min-width: 70px;
+    text-align: center;
+    display: inline-block;
+    cursor: pointer;
+  }
+
+  .schicht-nacht {
+    background: #6c757d;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 12px;
+    min-width: 70px;
+    text-align: center;
+    display: inline-block;
+    cursor: pointer;
+  }
+
+  .schicht-extra {
+    background: #28a745;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 12px;
+    min-width: 70px;
+    text-align: center;
+    display: inline-block;
+    cursor: pointer;
+  }
+
+  .ma-input {
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 16px;
+    text-align: center;
+    width: 70px;
+    background: white;
+    user-select: text;
+    -webkit-user-select: text;
+    transition: border-color 0.2s ease;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .ma-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+  }
+
+  .calc-button {
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s ease;
+    -webkit-appearance: none;
+    appearance: none;
+    touch-action: manipulation;
+  }
+  .calc-button:hover {
+    background: linear-gradient(135deg, #357abd, #2968a3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .calc-button:active {
+    transform: scale(0.98);
+  }
+
+  .editable {
+    cursor: pointer;
+    outline: none;
+    user-select: text;
+    -webkit-user-select: text;
+    transition: background-color 0.2s ease;
+    -webkit-touch-callout: text;
+  }
+  .editable:focus {
+    background-color: #e7f3ff !important;
+    box-shadow: inset 0 0 0 2px #4a90e2;
+  }
+
+  .dashboard-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 15px;
+    width: 100%;
+    height: 100%;
+  }
+
+  .db-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    color: #333;
+    user-select: none;
+    transition: all 0.2s ease;
+  }
+
+  .db-box:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+  }
+
+  .status-wrapper {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+  }
+
+  .status-text-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    padding: 20px;
+    transition: all 0.2s ease;
+  }
+
+  .status-text-box:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+  }
+
+  .status-icons-container {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    padding: 15px;
+    transition: all 0.2s ease;
+  }
+
+  .status-icons-container:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+  }
+
+  .status-icons-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .status-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    opacity: 0.3;
+    transform: scale(0.9);
+  }
+
+  .status-icon.active {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  }
+
+  .status-icon.green {
+    background: #28a745;
+    color: white;
+  }
+
+  .status-icon.orange {
+    background: #f39c12;
+    color: white;
+  }
+
+  .status-icon.red {
+    background: #dc3545;
+    color: white;
+  }
+
+  .db-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+    color: #4a90e2;
+  }
+
+  .db-value {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #357abd;
+    line-height: 1;
+  }
+
+  @media (max-width: 1024px) {
+    .einsatzplan-dashboard-container {
+      flex-direction: column;
+    }
+
+    .dashboard-wrapper {
+      width: 100%;
+      margin-top: 0;
+    }
+
+    .dashboard-grid {
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 768px) {
+    body {
+      padding: 15px;
+    }
+
+    .container {
+      max-width: 1400px;
+    }
+
+    h2 {
+      font-size: 18px;
+    }
+
+    .einsatzplan-dashboard-container {
+      min-height: auto;
+    }
+
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto auto;
+    }
+
+    .status-wrapper {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .db-value {
+      font-size: 28px;
+    }
+  }
+
+  @supports (-webkit-touch-callout: none) {
+    input[type="number"] {
+      font-size: 16px;
+    }
+  }
+
+  .settings-bar {
+    background: white;
+    border-radius: 6px;
+    padding: 8px 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .settings-label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+  }
+
+  .dark-mode-toggle {
+    background: rgba(74, 144, 226, 0.1);
+    color: #4a90e2;
+    border: 1px solid rgba(74, 144, 226, 0.3);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dark-mode-toggle:hover {
+    background: rgba(74, 144, 226, 0.2);
+    border-color: rgba(74, 144, 226, 0.5);
+  }
+
+  .dev-mode-toggle {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dev-mode-toggle:hover {
+    background: rgba(220, 53, 69, 0.2);
+    border-color: rgba(220, 53, 69, 0.5);
+  }
+
+  .dev-mode-toggle.active {
+    background: #dc3545;
+    color: white;
+    border-color: #dc3545;
+  }
+
+  .dev-controls {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(220, 53, 69, 0.05);
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  body.dev-mode .dev-controls {
+    display: block;
+  }
+
+  .wochenplan-table th.time-header {
+    position: relative;
+  }
+
+  .add-column-btn {
+    display: none;
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #28a745;
+    color: white;
+    border: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 10;
+    padding: 0;
+    line-height: 1;
+  }
+
+  body.dev-mode .add-column-btn {
+    display: block;
+  }
+
+  .add-column-btn:hover {
+    background: #218838;
+  }
+
+  .delete-column-btn {
+    display: none;
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    font-size: 10px;
+    cursor: pointer;
+    z-index: 10;
+    padding: 0;
+    line-height: 1;
+  }
+
+  body.dev-mode .delete-column-btn {
+    display: block;
+  }
+
+  .delete-column-btn:hover {
+    background: #c82333;
+  }
+
+  body.dark-mode {
+    background-color: #1a1a2e;
+    color: #e0e0e0;
+  }
+
+  body.dark-mode .alert {
+    background-color: #3a3a00;
+    border-color: #6a6a00;
+    color: #ffd700;
+  }
+
+  body.dark-mode h2 {
+    color: #e0e0e0;
+    border-bottom-color: #444;
+  }
+
+  body.dark-mode .table-wrapper {
+    background: #2d2d44;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  body.dark-mode table {
+    background: #2d2d44;
+  }
+
+  body.dark-mode tbody tr {
+    border-bottom-color: #444;
+  }
+
+  body.dark-mode tbody tr:hover {
+    background-color: #3a3a54;
+  }
+
+  body.dark-mode td {
+    color: #e0e0e0;
+  }
+
+  body.dark-mode .ma-input {
+    background: #3a3a54;
+    color: #e0e0e0;
+    border-color: #555;
+  }
+
+  body.dark-mode .db-box,
+  body.dark-mode .status-text-box,
+  body.dark-mode .status-icons-container {
+    background: #2d2d44;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+
+  body.dark-mode .db-label {
+    color: #6ca6e8;
+  }
+
+  body.dark-mode .db-value {
+    color: #8ab4f8;
+  }
+
+  body.dark-mode .date-navigation {
+    background: #2d2d44;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  body.dark-mode .date-display {
+    color: #e0e0e0;
+  }
+
+  body.dark-mode .wochenplan-table {
+    background: #2d2d44;
+  }
+
+  body.dark-mode .wochenplan-table td {
+    background: #3a3a54;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+
+  body.dark-mode .wochenplan-table td.day-cell {
+    background: #2d2d44;
+  }
+
+  body.dark-mode .drag-section {
+    background: linear-gradient(to bottom, #2d2d44, #3a3a54);
+    border-color: #444;
+  }
+
+  body.dark-mode .drag-section h3 {
+    color: #8ab4f8;
+    border-bottom-color: #6ca6e8;
+  }
+
+  body.dark-mode .settings-bar {
+    background: #2d2d44;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  body.dark-mode .settings-label {
+    color: #a0a0a0;
+  }
+
+  body.dark-mode .dark-mode-toggle {
+    background: rgba(138, 180, 248, 0.1);
+    color: #8ab4f8;
+    border-color: rgba(138, 180, 248, 0.3);
+  }
+
+  body.dark-mode .dark-mode-toggle:hover {
+    background: rgba(138, 180, 248, 0.2);
+    border-color: rgba(138, 180, 248, 0.5);
+  }
+
+  body.dark-mode .timeline-container {
+    background: #2d2d44;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  body.dark-mode .timeline-header {
+    background: #357abd;
+    border-bottom-color: #2968a3;
+  }
+
+  body.dark-mode .timeline-slot {
+    border-right-color: rgba(255,255,255,0.1);
+  }
+
+  body.dark-mode .timeline-slot:hover {
+    background: rgba(255,255,255,0.05);
+  }
+
+  body.dark-mode .timeline-canvas {
+    background: #3a3a54;
+  }
+
+  body.dark-mode .timeline-lane {
+    border-bottom-color: rgba(255,255,255,0.1);
+  }
+
+  body.dark-mode .timeline-lane-label {
+    background: #2d2d44;
+    color: #8ab4f8;
+  }
+
+  body.dark-mode .timeline-zoom-btn {
+    background: #2d2d44;
+    border-color: #6ca6e8;
+    color: #6ca6e8;
+  }
+
+  body.dark-mode .timeline-zoom-btn:hover {
+    background: #6ca6e8;
+    color: #2d2d44;
+  }
+
+  @media (max-width: 768px) {
+    body {
+      padding: 10px;
+    }
+
+    h2 {
+      font-size: 16px;
+      margin: 20px 0 10px 0;
+    }
+
+    .alert {
+      padding: 8px 12px;
+      font-size: 12px;
+      margin-bottom: 15px;
+    }
+
+    .einsatzplan-dashboard-container {
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .einsatzplan-header th {
+      padding: 10px 8px;
+      font-size: 11px;
+    }
+
+    .pools-header th {
+      padding: 8px 6px;
+      font-size: 10px;
+    }
+
+    td {
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    .pools-table td {
+      padding: 6px 8px;
+      font-size: 11px;
+    }
+
+    .ma-input {
+      width: 60px;
+      padding: 6px 8px;
+      font-size: 14px;
+    }
+
+    .db-label {
+      font-size: 9px;
+    }
+
+    .db-value {
+      font-size: 24px;
+    }
+
+    .date-navigation {
+      padding: 8px;
+      gap: 10px;
+      margin: 15px 0 10px 0;
+    }
+
+    .date-nav-btn {
+      width: 36px;
+      height: 36px;
+      font-size: 14px;
+    }
+
+    .date-display {
+      font-size: 12px;
+      min-width: 180px;
+    }
+
+    .heute-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .drag-section {
+      padding: 10px;
+    }
+
+    .drag-section h3 {
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+
+    .drag-items-grid {
+      gap: 6px;
+    }
+
+    .drag-item {
+      padding: 5px 8px;
+      font-size: 9px;
+    }
+
+    .settings-bar {
+      padding: 8px 12px;
+      margin-bottom: 15px;
+    }
+
+    .settings-label {
+      font-size: 11px;
+    }
+
+    .dark-mode-toggle {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+  }
+
+  .date-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 8px 0 8px 0;
+    padding: 8px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .date-nav-btn {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    -webkit-appearance: none;
+    appearance: none;
+    touch-action: manipulation;
+  }
+
+  .date-nav-btn:hover {
+    background: #357abd;
+  }
+
+  .date-nav-btn:active {
+    background: #2968a3;
+    transform: scale(0.95);
+  }
+
+  .date-display {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    min-width: 250px;
+    text-align: center;
+  }
+
+  .heute-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .heute-btn:hover {
+    background: #218838;
+  }
+
+/* Timeline Styles - Kompakt und konsistent */
+.timeline-container {
+  background: white;
+  border-radius: 8px;
+  overflow-x: hidden;
+  overflow-y: visible;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 10px;
+  max-width: 100%;
+}
+
+.timeline-header {
+  display: flex;
+  background: #4a90e2;
+  color: white;
+  border-bottom: 2px solid #357abd;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  flex-wrap: nowrap;
+}
+
+.timeline-slot {
+  flex: 1;
+  min-width: 50px;
+  padding: 8px 4px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 10px;
+  border-right: 1px solid rgba(255,255,255,0.2);
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+
+.timeline-slot:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.timeline-slot:last-child {
+  border-right: none;
+}
+
+.timeline-canvas {
+  position: relative;
+  min-height: 270px;
+  max-height: 120px;
+  background: #fafafa;
+  padding: 5px 0;
+  overflow: hidden;
+}
+
+.timeline-lanes {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 20px;
+  bottom: 20px;
+  pointer-events: none;
+}
+
+.timeline-lane {
+  height: 40px;
+  border-bottom: 1px dashed rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.timeline-lane-label {
+  position: absolute;
+  left: -120px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 600;
+  font-size: 11px;
+  color: #666;
+  background: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.timeline-box {
+  position: absolute;
+  background: white;
+  border: 2px solid #333;
+  border-radius: 3px;
+  padding: 3px 4px;
+  cursor: grab;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  font-size: 9px;
+  font-weight: 600;
+  color: white;
+  user-select: none;
+  transition: box-shadow 0.2s ease, opacity 0.1s ease;
+  z-index: 10;
+  min-width: 45px;
+  height: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  will-change: transform;
+}
+
+.timeline-box:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 20;
+}
+
+.timeline-box.dragging {
+  opacity: 0.85;
+  cursor: grabbing !important;
+  z-index: 100;
+  transition: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+
+.timeline-box-text {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.timeline-box-time {
+  font-size: 9px;
+  font-weight: 500;
+  opacity: 0.85;
+  background: rgba(0,0,0,0.15);
+  padding: 1px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.timeline-box .resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  cursor: ew-resize;
+  background: rgba(0,0,0,0.15);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 0 3px 3px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-box .resize-handle::after {
+  content: '⋮';
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.timeline-box:hover .resize-handle {
+  opacity: 1;
+}
+
+.timeline-box .resize-handle:hover {
+  background: rgba(0,0,0,0.25);
+}
+
+.timeline-box .delete-btn {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background: rgba(220, 53, 69, 0.95);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.timeline-box:hover .delete-btn {
+  opacity: 1;
+}
+
+.timeline-box .delete-btn:hover {
+  background: #dc3545;
+  transform: scale(1.1);
+}
+
+.timeline-box.schicht-frueh {
+  background: linear-gradient(135deg, #4a90e2, #357abd);
+  border-color: #2968a3;
+}
+
+.timeline-box.schicht-spat {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  border-color: #0d6674;
+}
+
+.timeline-box.schicht-taeti {
+  background: linear-gradient(135deg, #e67e22, #d35400);
+  border-color: #a04000;
+}
+
+.timeline-box.schicht-nacht {
+  background: linear-gradient(135deg, #6c757d, #545b62);
+  border-color: #3d4349;
+}
+
+.timeline-box.schicht-extra {
+  background: linear-gradient(135deg, #28a745, #1e7e34);
+  border-color: #145523;
+}
+
+.timeline-box.pool-box {
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+  border-color: #c87f0a;
+}
+
+.timeline-tooltip {
+  display: none !important;
+}
+
+.timeline-zoom-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 8px;
+  z-index: 40;
+}
+
+.timeline-zoom-btn {
+  background: white;
+  border: 2px solid #4a90e2;
+  color: #4a90e2;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.timeline-zoom-btn:hover {
+  background: #4a90e2;
+  color: white;
+  transform: scale(1.1);
+}
+
+
+  .wochenplan-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    table-layout: fixed;
+  }
+
+  .wochenplan-table th {
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: white;
+    padding: 8px 4px;
+    font-weight: 600;
+    font-size: 10px;
+    text-align: center;
+    border: 1px solid #357abd;
+    letter-spacing: 0.3px;
+  }
+
+  .wochenplan-table th.day-header {
+    font-size: 11px;
+    min-width: 70px;
+    text-align: left;
+    padding-left: 10px;
+  }
+
+  .wochenplan-table td {
+    border: 1px solid #e0e0e0;
+    padding: 4px;
+    text-align: center;
+    font-size: 10px;
+    height: 50px;
+    max-height: 50px;
+    vertical-align: top;
+    background: #fafafa;
+    transition: all 0.15s ease;
+    overflow: hidden;
+  }
+
+  .wochenplan-table td.day-cell {
+    font-weight: 600;
+    background: #f8f9fa;
+    text-align: left;
+    padding-left: 12px;
+  }
+
+  .wochenplan-table td:hover:not(.day-cell) {
+    background-color: #e3f2fd;
+    cursor: pointer;
+    box-shadow: inset 0 0 0 1px #4a90e2;
+  }
+
+  .wochenplan-table td[contenteditable="true"] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  .wochenplan-table td[contenteditable="true"]:focus {
+    background-color: #fff9e6;
+    outline: 2px solid #4a90e2;
+  }
+
+  .drag-items-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .drag-section {
+    flex: 1;
+    background: linear-gradient(to bottom, #ffffff, #f8f9fa);
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid #e0e0e0;
+  }
+
+  .drag-section h3 {
+    margin: 0 0 6px 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #357abd;
+    border-bottom: 2px solid #4a90e2;
+    padding-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .drag-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 6px;
+  }
+
+  .drag-item {
+    padding: 6px 8px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 11px;
+    cursor: grab;
+    transition: all 0.15s ease;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    border: 1px solid rgba(0,0,0,0.1);
+  }
+
+  .drag-item:active {
+    cursor: grabbing;
+    transform: scale(0.96);
+  }
+
+  .drag-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  }
+
+  .drag-item.schicht-item {
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  .drag-item.pool-item {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  .wochenplan-table td.drop-target {
+    background-color: #e3f2fd !important;
+    border: 2px dashed #4a90e2 !important;
+    box-shadow: inset 0 0 8px rgba(74, 144, 226, 0.2);
+  }
+
+  .wochenplan-table td .cell-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px;
+  }
+
+  .wochenplan-table td .cell-content::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  .wochenplan-table td .cell-content::-webkit-scrollbar-thumb {
+    background: #4a90e2;
+    border-radius: 2px;
+  }
+
+  .wochenplan-table td .item-badge {
+    padding: 5px 10px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    color: white;
+    cursor: pointer;
+    position: relative;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+    border: 1px solid rgba(0,0,0,0.1);
+  }
+
+  .wochenplan-table td .item-badge:hover {
+    opacity: 0.85;
+  }
+
+  .wochenplan-table td .item-badge:hover::after {
+    content: '×';
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    font-weight: bold;
+    text-shadow: none;
+  }
+
+  .time-edit-input {
+    background: white;
+    color: #333;
+    border: 2px solid #fff;
+    border-radius: 3px;
+    padding: 2px 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-align: center;
+    width: 45px;
+    font-family: inherit;
+  }
+
+  .time-edit-input:focus {
+    outline: none;
+    border-color: #ffd700;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  }
+
+  body.dev-mode .wochenplan-table th.time-header {
+    padding: 4px 4px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="alert">
+      Wichtig: Für aktuelle Infos bitte die 
+      <a href="https://www.offizielle-website.ch/" target="_blank">offizielle Webseite</a> besuchen.
+    </div>
+
+    <div class="settings-bar">
+      <span class="settings-label">Einstellungen:</span>
+      <button class="dark-mode-toggle" onclick="toggleDarkMode()">
+        <span id="darkModeIcon">🌙</span>
+        <span id="darkModeText">Dunkelmodus</span>
+      </button>
+      <button class="dev-mode-toggle" onclick="toggleDevMode()">
+        <span>🛠️</span>
+        <span id="devModeText">Developer-Modus</span>
+      </button>
+    </div>
+
+    <div class="dev-controls">
+      <strong>Developer-Modus aktiv:</strong> Sie können jetzt Zeitspalten im Wochenplan hinzufügen/löschen (klicken Sie auf die <span style="color: #28a745;">+</span> Buttons) und die Zeiten direkt bearbeiten (klicken Sie auf die Uhrzeiten im Wochenplan-Header).
+    </div>
+
+    <div class="einsatzplan-dashboard-container">
+      <div class="einsatzplan-wrapper">
+        <h2>Einsatzplan</h2>
+        <div class="table-wrapper">
+          <table id="einsatzplanTable">
+            <thead class="einsatzplan-header">
+              <tr>
+                <th>SCHICHT (EDITIERBAR)</th>
+                <th style="text-align: center;">MA</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr draggable="true">
+                <td>
+                  <span class="drag-handle">⋮⋮</span>
+                  <span id="fruehName" class="schicht-frueh editable" contenteditable="true">FRÜH</span>
+                </td>
+                <td style="text-align: center;">
+                  <input type="number" class="ma-input" id="maFrueh" value="20" min="0">
+                </td>
+              </tr>
+              <tr draggable="true">
+                <td>
+                  <span class="drag-handle">⋮⋮</span>
+                  <span id="spatName" class="schicht-spat editable" contenteditable="true">SPÄT</span>
+                </td>
+                <td style="text-align: center;">
+                  <input type="number" class="ma-input" id="maSpat" value="8" min="0">
+                </td>
+              </tr>
+              <tr draggable="true">
+                <td>
+                  <span class="drag-handle">⋮⋮</span>
+                  <span id="taetiName" class="schicht-taeti editable" contenteditable="true">TÄTI</span>
+                </td>
+                <td style="text-align: center;">
+                  <input type="number" class="ma-input" id="maTaeti" value="6" min="0">
+                </td>
+              </tr>
+              <tr draggable="true">
+                <td>
+                  <span class="drag-handle">⋮⋮</span>
+                  <span id="nachtName" class="schicht-nacht editable" contenteditable="true">NACHT</span>
+                </td>
+                <td style="text-align: center;">
+                  <input type="number" class="ma-input" id="maNacht" value="0" min="0">
+                </td>
+              </tr>
+              <tr draggable="true">
+                <td>
+                  <span class="drag-handle">⋮⋮</span>
+                  <span id="extraName" class="schicht-extra editable" contenteditable="true">EXTRA</span>
+                </td>
+                <td style="text-align: center;">
+                  <input type="number" class="ma-input" id="maExtra" value="0" min="0">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="dashboard-wrapper">
+        <div class="dashboard-grid">
+          <div class="status-wrapper">
+            <div class="status-text-box">
+              <div class="db-label">stataus%</div>
+              <div id="statusValue" class="db-value">102%</div>
+            </div>
+            <div class="status-icons-container">
+              <div class="status-icons-box">
+                <div class="status-icon green" id="ampelGreen"></div>
+                <div class="status-icon orange" id="ampelOrange"></div>
+                <div class="status-icon red" id="ampelRed"></div>
+              </div>
+            </div>
+          </div>
+          <div class="db-box">
+            <div class="db-label">Gesamt MA</div>
+            <div id="gesamtMA" class="db-value">34</div>
+          </div>
+          <div class="db-box">
+            <div class="db-label">Live Uhrzeit</div>
+            <div id="liveClock" class="db-value">09:39:04</div>
+          </div>
+          <div class="db-box">
+            <div class="db-label">Platzhalter</div>
+            <div class="db-value">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Pools mit Berechnung der benötigten MA</h2>
+    <div class="table-wrapper">
+      <table class="pools-table" id="poolsTable">
+        <thead class="pools-header">
+          <tr>
+            <th style="text-align: left;">POOLS</th>
+            <th>STARTZEIT</th>
+            <th>DEADLINE</th>
+            <th>DAUER (H)</th>
+            <th>PRO STUNDE</th>
+            <th>SCHICHT</th>
+            <th>BENÖTIGTE MA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr draggable="true" data-pool="2000" data-dauer="2.75" data-prostunde="80">
+            <td>
+              <span class="pool-badge">⋮⋮</span>
+              <span class="pool-badge">2000</span>
+              La Poste FR
+            </td>
+            <td>06:00</td>
+            <td>08:45</td>
+            <td>2.75</td>
+            <td>80</td>
+            <td><span class="schicht-frueh">FRÜH</span></td>
+            <td class="bedarf">9.09</td>
+          </tr>
+          <tr draggable="true" data-pool="1000" data-dauer="4" data-prostunde="80">
+            <td>
+              <span class="pool-badge">⋮⋮</span>
+              <span class="pool-badge">1000</span>
+              DPAG
+            </td>
+            <td>06:00</td>
+            <td>10:00</td>
+            <td>4</td>
+            <td>80</td>
+            <td><span class="schicht-frueh">FRÜH</span></td>
+            <td class="bedarf">3.13</td>
+          </tr>
+          <tr draggable="true" data-pool="4000" data-dauer="5" data-prostunde="80">
+            <td>
+              <span class="pool-badge">⋮⋮</span>
+              <span class="pool-badge">4000</span>
+              NL/DK/NO/SE/CZ/LU/HU/IS
+            </td>
+            <td>06:00</td>
+            <td>11:00</td>
+            <td>5</td>
+            <td>80</td>
+            <td><span class="schicht-frueh">FRÜH</span></td>
+            <td class="bedarf">10</td>
+          </tr>
+          <tr draggable="true" data-pool="2000" data-dauer="8" data-prostunde="80">
+            <td>
+              <span class="pool-badge">⋮⋮</span>
+              <span class="pool-badge">2000</span>
+              EMS alle
+            </td>
+            <td>06:00</td>
+            <td>14:00</td>
+            <td>8</td>
+            <td>80</td>
+            <td><span class="schicht-spat">SPÄT</span></td>
+            <td class="bedarf">3.13</td>
+          </tr>
+          <tr draggable="true" data-pool="800" data-dauer="9" data-prostunde="80">
+            <td>
+              <span class="pool-badge">⋮⋮</span>
+              <span class="pool-badge">800</span>
+              IT/BE/GB
+            </td>
+            <td>06:00</td>
+            <td>15:00</td>
+            <td>9</td>
+            <td>80</td>
+            <td><span class="schicht-spat">SPÄT</span></td>
+            <td class="bedarf">1.11</td>
+          </tr>
+          <tr draggable="true" data-pool="500" data-dauer="10.5" data-prostunde="80">
+            <td>
+              <span class="pool-badge">⋮⋮</span>
+              <span class="pool-badge">500</span>
+              AT
+            </td>
+            <td>06:00</td>
+            <td>16:30</td>
+            <td>10.5</td>
+            <td>80</td>
+            <td><span class="schicht-spat">SPÄT</span></td>
+            <td class="bedarf">0.6</td>
+          </tr>
+          <tr draggable="true" data-pool="800" data-dauer="13" data-prostunde="80">
+            <td>
+              <span class="pool-badge">⋮⋮</span>
+              <span class="pool-badge">800</span>
+              JP/AU/HK/TH/CA/US
+            </td>
+            <td>06:00</td>
+            <td>19:00</td>
+            <td>13</td>
+            <td>80</td>
+            <td><span class="schicht-spat">SPÄT</span></td>
+            <td class="bedarf">0.77</td>
+          </tr>
+          <tr draggable="true" data-pool="500" data-dauer="10" data-prostunde="80">
+            <td>
+              <span class="pool-badge">⋮⋮</span>
+              <span class="pool-badge">500</span>
+              EMC Länder
+            </td>
+            <td>06:00</td>
+            <td>16:00</td>
+            <td>10</td>
+            <td>80</td>
+            <td><span class="schicht-spat">SPÄT</span></td>
+            <td class="bedarf">0.63</td>
+          </tr>
+          <tr draggable="true" data-pool="1000" data-dauer="11" data-prostunde="80">
+            <td>
+              <span class="pool-badge">⋮⋮</span>
+              <span class="pool-badge">1000</span>
+              Endpunkt
+            </td>
+            <td>06:00</td>
+            <td>17:00</td>
+            <td>11</td>
+            <td>80</td>
+            <td><span class="schicht-spat">SPÄT</span></td>
+            <td class="bedarf">1.14</td>
+          </tr>
+          <tr draggable="true" data-pool="4000" data-dauer="13" data-prostunde="80">
+            <td>
+              <span class="pool-badge">⋮⋮</span>
+              <span class="pool-badge">4000</span>
+              Kleinwaren Mülligen
+            </td>
+            <td>06:00</td>
+            <td>19:00</td>
+            <td>13</td>
+            <td>80</td>
+            <td><span class="schicht-spat">SPÄT</span></td>
+            <td class="bedarf">3.85</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Wochenplan (Timeline)</h2>
+    <div class="timeline-container">
+      <div class="timeline-header" id="timelineHeader">
+        <div class="timeline-slot">06:00</div>
+        <div class="timeline-slot">08:00</div>
+        <div class="timeline-slot">10:00</div>
+        <div class="timeline-slot">12:00</div>
+        <div class="timeline-slot">14:00</div>
+        <div class="timeline-slot">16:00</div>
+        <div class="timeline-slot">18:00</div>
+        <div class="timeline-slot">20:00</div>
+      </div>
+      <div class="timeline-canvas" id="timelineCanvas">
+        <!-- Boxes werden hier dynamisch hinzugefügt -->
+      </div>
+    </div>
+
+    <div class="date-navigation">
+      <button class="date-nav-btn" onclick="changeDate(-1)">◀</button>
+      <div class="date-display" id="currentDate">Donnerstag, 03. Oktober 2025</div>
+      <button class="date-nav-btn" onclick="changeDate(1)">▶</button>
+      <button class="heute-btn" onclick="goToToday()">Heute</button>
+    </div>
+
+    <div class="drag-items-container">
+      <div class="drag-section">
+        <h3>Schichten</h3>
+        <div class="drag-items-grid" id="schichtenGrid">
+          <div class="drag-item schicht-item" draggable="true" data-type="schicht" data-value="FRÜH" style="background: #4a90e2;">FRÜH</div>
+          <div class="drag-item schicht-item" draggable="true" data-type="schicht" data-value="SPÄT" style="background: #17a2b8;">SPÄT</div>
+          <div class="drag-item schicht-item" draggable="true" data-type="schicht" data-value="TÄTI" style="background: #e67e22;">TÄTI</div>
+          <div class="drag-item schicht-item" draggable="true" data-type="schicht" data-value="NACHT" style="background: #6c757d;">NACHT</div>
+          <div class="drag-item schicht-item" draggable="true" data-type="schicht" data-value="EXTRA" style="background: #28a745;">EXTRA</div>
+        </div>
+      </div>
+
+      <div class="drag-section">
+        <h3>Pools / Produkte</h3>
+        <div class="drag-items-grid" id="poolsGrid">
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  let draggedElement = null;
+  let currentViewDate = new Date();
+  let timeSlots = JSON.parse(localStorage.getItem('timeSlots')) || [6, 8, 10, 12, 14, 16, 18, 20];
+
+  function toggleDarkMode() {
+    const body = document.body;
+    const icon = document.getElementById('darkModeIcon');
+    const text = document.getElementById('darkModeText');
+
+    body.classList.toggle('dark-mode');
+
+    if (body.classList.contains('dark-mode')) {
+      icon.textContent = '☀️';
+      text.textContent = 'Hellmodus';
+      localStorage.setItem('darkMode', 'enabled');
+    } else {
+      icon.textContent = '🌙';
+      text.textContent = 'Dunkelmodus';
+      localStorage.setItem('darkMode', 'disabled');
+    }
+  }
+
+  function initDarkMode() {
+    const darkMode = localStorage.getItem('darkMode');
+    const icon = document.getElementById('darkModeIcon');
+    const text = document.getElementById('darkModeText');
+
+    if (darkMode === 'enabled') {
+      document.body.classList.add('dark-mode');
+      icon.textContent = '☀️';
+      text.textContent = 'Hellmodus';
+    }
+  }
+
+  function toggleDevMode() {
+    const body = document.body;
+    const button = document.querySelector('.dev-mode-toggle');
+
+    body.classList.toggle('dev-mode');
+
+    if (body.classList.contains('dev-mode')) {
+      button.classList.add('active');
+      localStorage.setItem('devMode', 'enabled');
+    } else {
+      button.classList.remove('active');
+      localStorage.setItem('devMode', 'disabled');
+    }
+
+    updateWochenplan();
+  }
+
+  function initDevMode() {
+    const devMode = localStorage.getItem('devMode');
+    const button = document.querySelector('.dev-mode-toggle');
+
+    if (devMode === 'enabled') {
+      document.body.classList.add('dev-mode');
+      button.classList.add('active');
+    }
+  }
+
+  function saveTimeSlots() {
+    localStorage.setItem('timeSlots', JSON.stringify(timeSlots));
+  }
+
+  function formatTime(hour) {
+    const h = Math.floor(hour);
+    const m = Math.round((hour % 1) * 60);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+
+  function addColumn(afterIndex) {
+    const currentTime = timeSlots[afterIndex];
+    const nextTime = timeSlots[afterIndex + 1];
+
+    let newTime;
+    if (nextTime && nextTime === currentTime + 1) {
+      newTime = currentTime + 0.5;
+    } else if (nextTime) {
+      newTime = currentTime + 0.5;
+    } else {
+      newTime = currentTime + 1;
+    }
+
+    timeSlots.splice(afterIndex + 1, 0, newTime);
+    saveTimeSlots();
+    updateWochenplan();
+  }
+
+  function deleteColumn(index) {
+    if (timeSlots.length <= 2) {
+      alert('Sie müssen mindestens 2 Zeitslots behalten!');
+      return;
+    }
+
+    if (confirm(`Möchten Sie die Spalte ${formatTime(timeSlots[index])} wirklich löschen?`)) {
+      timeSlots.splice(index, 1);
+      saveTimeSlots();
+      updateWochenplan();
+    }
+  }
+
+  function initDragAndDrop(tableId) {
+    const table = document.getElementById(tableId);
+    const tbody = table.querySelector('tbody');
+
+    tbody.addEventListener('dragstart', function(e) {
+      if (e.target.tagName === 'TR' || e.target.closest('tr')) {
+        draggedElement = e.target.tagName === 'TR' ? e.target : e.target.closest('tr');
+        draggedElement.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      }
+    });
+
+    tbody.addEventListener('dragend', function(e) {
+      if (draggedElement) {
+        draggedElement.classList.remove('dragging');
+        draggedElement = null;
+      }
+      tbody.querySelectorAll('tr').forEach(row => {
+        row.classList.remove('drag-over');
+      });
+    });
+
+    tbody.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+
+      const afterElement = getDragAfterElement(tbody, e.clientY);
+      const dragOverElement = afterElement ? afterElement : tbody.lastElementChild;
+
+      tbody.querySelectorAll('tr').forEach(row => {
+        row.classList.remove('drag-over');
+      });
+
+      if (dragOverElement && dragOverElement !== draggedElement) {
+        dragOverElement.classList.add('drag-over');
+      }
+    });
+
+    tbody.addEventListener('drop', function(e) {
+      e.preventDefault();
+
+      if (!draggedElement) return;
+
+      const afterElement = getDragAfterElement(tbody, e.clientY);
+
+      if (afterElement == null) {
+        tbody.appendChild(draggedElement);
+      } else {
+        tbody.insertBefore(draggedElement, afterElement);
+      }
+
+      tbody.querySelectorAll('tr').forEach(row => {
+        row.classList.remove('drag-over');
+      });
+
+      berechnen();
+    });
+  }
+
+  function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('tr:not(.dragging)')];
+
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  function berechnen() {
+    const poolRows = document.querySelectorAll('#poolsTable tbody tr');
+    poolRows.forEach(row => {
+      const pool = parseFloat(row.dataset.pool);
+      const dauer = parseFloat(row.dataset.dauer);
+      const proStunde = parseFloat(row.dataset.prostunde);
+
+      if (pool && dauer && proStunde) {
+        const bedarf = Math.round((pool / (dauer * proStunde)) * 100) / 100;
+        const bedarfCell = row.querySelector('.bedarf');
+        if (bedarfCell) {
+          bedarfCell.textContent = bedarf % 1 === 0 ? bedarf : bedarf;
+        }
+      }
+    });
+
+    const fruehName = document.getElementById('fruehName').textContent.trim();
+    const spatName = document.getElementById('spatName').textContent.trim();
+    const taetiName = document.getElementById('taetiName').textContent.trim();
+    const nachtName = document.getElementById('nachtName').textContent.trim();
+    const extraName = document.getElementById('extraName').textContent.trim();
+
+    document.querySelectorAll('.schicht-frueh').forEach(element => {
+      element.textContent = fruehName;
+    });
+
+    document.querySelectorAll('.schicht-spat').forEach(element => {
+      element.textContent = spatName;
+    });
+
+    document.querySelectorAll('.schicht-taeti').forEach(element => {
+      element.textContent = taetiName;
+    });
+
+    document.querySelectorAll('.schicht-nacht').forEach(element => {
+      element.textContent = nachtName;
+    });
+
+    document.querySelectorAll('.schicht-extra').forEach(element => {
+      element.textContent = extraName;
+    });
+
+    updateDashboard();
+  }
+
+  function updateDashboard() {
+    let frueh = parseInt(document.getElementById('maFrueh').value, 10) || 0;
+    let spat = parseInt(document.getElementById('maSpat').value, 10) || 0;
+    let taeti = parseInt(document.getElementById('maTaeti').value, 10) || 0;
+    let nacht = parseInt(document.getElementById('maNacht').value, 10) || 0;
+    let extra = parseInt(document.getElementById('maExtra').value, 10) || 0;
+    let gesamt = frueh + spat + taeti + nacht + extra;
+    document.getElementById('gesamtMA').textContent = gesamt;
+
+    let poolRows = document.querySelectorAll('#poolsTable tbody tr');
+    let benoetigteMA = 0;
+    poolRows.forEach(row => {
+      let wert = parseFloat(row.querySelector('.bedarf').textContent.replace(",", "."));
+      benoetigteMA += isNaN(wert) ? 0 : wert;
+    });
+
+    let status = benoetigteMA ? Math.round(gesamt / benoetigteMA * 100) : 0;
+    document.getElementById('statusValue').textContent = status + "%";
+
+    const ampelGreen = document.getElementById('ampelGreen');
+    const ampelOrange = document.getElementById('ampelOrange');
+    const ampelRed = document.getElementById('ampelRed');
+
+    ampelGreen.classList.remove('active');
+    ampelOrange.classList.remove('active');
+    ampelRed.classList.remove('active');
+
+    if (status >= 100) {
+      ampelGreen.classList.add('active');
+    } else if (status >= 80) {
+      ampelOrange.classList.add('active');
+    } else {
+      ampelRed.classList.add('active');
+    }
+  }
+
+  function startClock() {
+    function tick() {
+      let now = new Date();
+      let h = String(now.getHours()).padStart(2, '0');
+      let m = String(now.getMinutes()).padStart(2, '0');
+      let s = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('liveClock').textContent = h + ":" + m + ":" + s;
+      setTimeout(tick, 1000);
+    }
+    tick();
+  }
+
+  function updateDateDisplay() {
+    const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+    const dayName = days[currentViewDate.getDay()];
+    const day = String(currentViewDate.getDate()).padStart(2, '0');
+    const monthName = months[currentViewDate.getMonth()];
+    const year = currentViewDate.getFullYear();
+
+    document.getElementById('currentDate').textContent = `${dayName}, ${day}. ${monthName} ${year}`;
+  }
+
+  function changeDate(days) {
+    currentViewDate.setDate(currentViewDate.getDate() + days);
+    updateDateDisplay();
+    updateWochenplan();
+  }
+
+  function goToToday() {
+    const today = new Date();
+    currentViewDate.setFullYear(today.getFullYear());
+    currentViewDate.setMonth(today.getMonth());
+    currentViewDate.setDate(today.getDate());
+    updateDateDisplay();
+    updateWochenplan();
+  }
+
+  function getMonday(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
+  }
+
+  function parseTimeString(timeStr) {
+    const parts = timeStr.trim().split(':');
+    if (parts.length === 2) {
+      const hours = parseInt(parts[0], 10);
+      const minutes = parseInt(parts[1], 10);
+      if (!isNaN(hours) && !isNaN(minutes) && hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
+        return hours + (minutes / 60);
+      }
+    }
+    return null;
+  }
+
+  function updateWochenplan() {
+    const tbody = document.getElementById('wochenplanBody');
+    if (!tbody) return; // Timeline-Modus aktiv, alte Funktion überspringen
+
+    const monday = getMonday(currentViewDate);
+    const thead = document.querySelector('#wochenplanTable thead tr');
+
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+
+    timeSlots.forEach((time, index) => {
+      const th = document.createElement('th');
+      th.className = 'time-header';
+
+      if (document.body.classList.contains('dev-mode')) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'time-edit-input';
+        input.value = formatTime(time);
+        input.placeholder = 'HH:MM';
+        input.maxLength = 5;
+
+        input.addEventListener('change', function() {
+          const newTime = parseTimeString(this.value);
+
+          if (newTime !== null) {
+            timeSlots[index] = newTime;
+            saveTimeSlots();
+            updateWochenplan();
+          } else {
+            alert('Ungültige Zeit! Format: HH:MM (z.B. 06:00 oder 14:30)');
+            this.value = formatTime(time);
+          }
+        });
+
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            this.blur();
+          }
+        });
+
+        th.appendChild(input);
+      } else {
+        th.textContent = formatTime(time);
+      }
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-column-btn';
+      deleteBtn.textContent = '×';
+      deleteBtn.onclick = () => deleteColumn(index);
+      th.appendChild(deleteBtn);
+
+      if (index < timeSlots.length - 1) {
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-column-btn';
+        addBtn.textContent = '+';
+        addBtn.onclick = () => addColumn(index);
+        th.appendChild(addBtn);
+      }
+
+      thead.appendChild(th);
+    });
+
+    const daysOfWeek = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      const row = document.createElement('tr');
+
+      timeSlots.forEach(() => {
+        const cell = document.createElement('td');
+        cell.innerHTML = '<div class="cell-content"></div>';
+        setupCellDropZone(cell);
+        row.appendChild(cell);
+      });
+
+      tbody.appendChild(row);
+    }
+
+    loadWochenplanData();
+    populatePoolsGrid();
+  }
+
+  function populatePoolsGrid() {
+    const poolsGrid = document.getElementById('poolsGrid');
+    poolsGrid.innerHTML = '';
+
+    const poolRows = document.querySelectorAll('#poolsTable tbody tr');
+    poolRows.forEach(row => {
+      const poolBadge = row.querySelector('.pool-badge:nth-of-type(2)');
+      const poolName = row.querySelector('td:first-child');
+
+      if (poolBadge && poolName) {
+        const poolNumber = poolBadge.textContent.trim();
+        const fullText = poolName.textContent.replace(/⋮⋮/g, '').trim();
+        const parts = fullText.split('\n').filter(p => p.trim());
+        const poolLabel = parts.length > 1 ? parts[1].trim() : fullText.split(poolNumber)[1]?.trim() || poolNumber;
+
+        const dragItem = document.createElement('div');
+        dragItem.className = 'drag-item pool-item';
+        dragItem.draggable = true;
+        dragItem.setAttribute('data-type', 'pool');
+        dragItem.setAttribute('data-value', poolLabel);
+        dragItem.textContent = poolLabel;
+
+        setupDragItem(dragItem);
+        poolsGrid.appendChild(dragItem);
+      }
+    });
+  }
+
+  function setupDragItem(item) {
+    item.addEventListener('dragstart', function(e) {
+      e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData('text/plain', item.getAttribute('data-value'));
+      e.dataTransfer.setData('item-type', item.getAttribute('data-type'));
+      e.dataTransfer.setData('item-color', item.style.background || '#f39c12');
+    });
+  }
+
+  function setupCellDropZone(cell) {
+    cell.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      cell.classList.add('drop-target');
+    });
+
+    cell.addEventListener('dragleave', function(e) {
+      cell.classList.remove('drop-target');
+    });
+
+    cell.addEventListener('drop', function(e) {
+      e.preventDefault();
+      cell.classList.remove('drop-target');
+
+      const value = e.dataTransfer.getData('text/plain');
+      const type = e.dataTransfer.getData('item-type');
+      const color = e.dataTransfer.getData('item-color');
+
+      if (value) {
+        const cellContent = cell.querySelector('.cell-content');
+        const badge = document.createElement('div');
+        badge.className = 'item-badge';
+        badge.textContent = value;
+        badge.style.background = color;
+
+        badge.addEventListener('click', function() {
+          badge.remove();
+          saveWochenplanData();
+        });
+
+        cellContent.appendChild(badge);
+        saveWochenplanData();
+      }
+    });
+  }
+
+  function getWeekKey() {
+    const monday = getMonday(currentViewDate);
+    return `week_${monday.getFullYear()}_${monday.getMonth()}_${monday.getDate()}`;
+  }
+
+  function saveWochenplanData() {
+    const weekKey = getWeekKey();
+    const tbody = document.getElementById('wochenplanBody');
+    const rows = tbody.querySelectorAll('tr');
+    const data = [];
+
+    rows.forEach(row => {
+      const cells = row.querySelectorAll('td');
+      const rowData = [];
+
+      cells.forEach(cell => {
+        const cellContent = cell.querySelector('.cell-content');
+        if (cellContent) {
+          const badges = cellContent.querySelectorAll('.item-badge');
+          const cellItems = Array.from(badges).map(badge => ({
+            text: badge.textContent,
+            color: badge.style.background
+          }));
+          rowData.push(cellItems);
+        }
+      });
+
+      data.push(rowData);
+    });
+
+    localStorage.setItem(weekKey, JSON.stringify(data));
+  }
+
+  function loadWochenplanData() {
+    const weekKey = getWeekKey();
+    const savedData = localStorage.getItem(weekKey);
+
+    if (savedData) {
+      const data = JSON.parse(savedData);
+      const tbody = document.getElementById('wochenplanBody');
+      const rows = tbody.querySelectorAll('tr');
+
+      rows.forEach((row, rowIndex) => {
+        if (data[rowIndex]) {
+          const cells = row.querySelectorAll('td');
+          cells.forEach((cell, cellIndex) => {
+            if (data[rowIndex][cellIndex]) {
+              const cellContent = cell.querySelector('.cell-content');
+              if (cellContent) {
+                data[rowIndex][cellIndex].forEach(item => {
+                  const badge = document.createElement('div');
+                  badge.className = 'item-badge';
+                  badge.textContent = item.text;
+                  badge.style.background = item.color;
+
+                  badge.addEventListener('click', function() {
+                    badge.remove();
+                    saveWochenplanData();
+                  });
+
+                  cellContent.appendChild(badge);
+                });
+              }
+            }
+          });
+        }
+      });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    initDragAndDrop('einsatzplanTable');
+    initDragAndDrop('poolsTable');
+
+    berechnen();
+    startClock();
+    updateDateDisplay();
+    updateWochenplan();
+    initDarkMode();
+    initDevMode();
+
+    document.querySelectorAll('#schichtenGrid .drag-item').forEach(item => {
+      setupDragItem(item);
+    });
+
+    ['fruehName', 'spatName', 'taetiName', 'nachtName', 'extraName'].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.addEventListener('input', berechnen);
+        element.addEventListener('blur', berechnen);
+      }
+    });
+
+    ['maFrueh', 'maSpat', 'maTaeti', 'maNacht', 'maExtra'].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.addEventListener('input', berechnen);
+      }
+    });
+  });
+
+
+// Timeline-Funktionen - Verbesserte Version
+let timelineBoxes = JSON.parse(localStorage.getItem('timelineBoxes')) || [];
+let boxIdCounter = parseInt(localStorage.getItem('boxIdCounter')) || 0;
+let isDraggingTimeline = false;
+let isResizing = false;
+let currentDragBox = null;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+let resizeStartX = 0;
+let resizeStartWidth = 0;
+let zoomLevel = 1;
+let numLanes = 5;
+
+
+function initPoolsGrid() {
+  const poolsGrid = document.getElementById('poolsGrid');
+  if (!poolsGrid) return;
+
+  // Lese alle Pools aus der Pools-Tabelle
+  const poolRows = document.querySelectorAll('#poolsTable tbody tr');
+  const pools = new Set();
+
+  poolRows.forEach(row => {
+    const poolBadge = row.querySelector('.pool-badge:nth-child(2)');
+    if (poolBadge) {
+      const poolName = poolBadge.textContent.trim();
+      const descCell = row.querySelector('td:first-child');
+      const fullText = descCell ? descCell.textContent.trim() : poolName;
+
+      // Extrahiere nur den Beschreibungstext nach den Badges
+      const parts = fullText.split(poolName);
+      const description = parts.length > 1 ? parts[1].trim() : poolName;
+
+      pools.add(JSON.stringify({ name: poolName, desc: description }));
+    }
+  });
+
+  // Erstelle Drag-Items für Pools
+  pools.forEach(poolJson => {
+    const pool = JSON.parse(poolJson);
+    const dragItem = document.createElement('div');
+    dragItem.className = 'drag-item pool-item';
+    dragItem.draggable = true;
+    dragItem.dataset.type = 'pool';
+    dragItem.dataset.value = pool.name + ' ' + pool.desc;
+    dragItem.textContent = pool.name;
+    dragItem.title = pool.desc;
+
+    setupDragItem(dragItem);
+    poolsGrid.appendChild(dragItem);
+  });
+}
+
+function setupDragItem(item) {
+  item.addEventListener('dragstart', function(e) {
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      type: item.dataset.type,
+      value: item.dataset.value,
+      style: item.style.background || item.style.backgroundColor
+    }));
+  });
+}
+
+function initTimeline() {
+  const canvas = document.getElementById('timelineCanvas');
+  if (!canvas) return;
+
+  // Setup drag items für Timeline
+  setupTimelineDragItems();
+
+  // Lade gespeicherte Boxen
+  renderTimelineBoxes();
+
+  // Canvas Click zum Hinzufügen
+  canvas.addEventListener('click', function(e) {
+    if (e.target === canvas && !isDraggingTimeline && !isResizing) {
+      // Leer - Boxen werden nur per Drag hinzugefügt
+    }
+  });
+}
+
+function setupTimelineDragItems() {
+  const dragItems = document.querySelectorAll('.drag-item');
+
+  dragItems.forEach(item => {
+    item.addEventListener('dragstart', function(e) {
+      e.dataTransfer.setData('text/plain', JSON.stringify({
+        type: item.dataset.type,
+        value: item.dataset.value,
+        style: item.style.background || item.style.backgroundColor
+      }));
+    });
+  });
+
+  const canvas = document.getElementById('timelineCanvas');
+  if (!canvas) return;
+
+  canvas.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  });
+
+  canvas.addEventListener('drop', function(e) {
+    e.preventDefault();
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Erstelle neue Box
+      createTimelineBox(data.value, x, y, data.type);
+    } catch (err) {
+      console.error('Drop error:', err);
+    }
+  });
+}
+
+function createTimelineBox(text, x, y, type) {
+  boxIdCounter++;
+
+  const canvas = document.getElementById('timelineCanvas');
+  const canvasWidth = canvas.offsetWidth;
+
+  // Keine Snapping - freie Platzierung
+  const boxX = Math.max(0, Math.min(x, canvasWidth - 100));
+  const boxY = Math.max(15, y);
+
+  const box = {
+    id: boxIdCounter,
+    text: text,
+    x: boxX,
+    y: boxY,
+    width: 140, // Standard-Breite
+    type: type,
+    className: getBoxClassName(text)
+  };
+
+  timelineBoxes.push(box);
+  saveTimelineData();
+  renderTimelineBoxes();
+}
+
+function getBoxClassName(text) {
+  const textUpper = text.toUpperCase();
+  if (textUpper.includes('FRÜH')) return 'schicht-frueh';
+  if (textUpper.includes('SPÄT')) return 'schicht-spat';
+  if (textUpper.includes('TÄTI')) return 'schicht-taeti';
+  if (textUpper.includes('NACHT')) return 'schicht-nacht';
+  if (textUpper.includes('EXTRA')) return 'schicht-extra';
+  return 'pool-box';
+}
+
+function renderTimelineBoxes() {
+  const canvas = document.getElementById('timelineCanvas');
+  if (!canvas) return;
+
+  // Lösche alle bestehenden Boxen
+  canvas.querySelectorAll('.timeline-box').forEach(box => box.remove());
+
+  // Rendere alle Boxen
+  timelineBoxes.forEach(boxData => {
+    const boxEl = document.createElement('div');
+    boxEl.className = `timeline-box ${boxData.className}`;
+    boxEl.style.left = boxData.x + 'px';
+    boxEl.style.top = boxData.y + 'px';
+    boxEl.style.width = boxData.width + 'px';
+    boxEl.dataset.id = boxData.id;
+
+    // Berechne Start- und Endzeit aus Position und Breite
+    const canvasWidth = canvas.offsetWidth;
+    const slotWidth = canvasWidth / 14;
+    const startSlot = Math.round(boxData.x / slotWidth);
+    const durationSlots = Math.round(boxData.width / slotWidth);
+    const startHour = 6 + startSlot;
+    const endHour = startHour + durationSlots;
+
+    // Text Container
+    const textEl = document.createElement('div');
+    textEl.className = 'timeline-box-text';
+    textEl.textContent = boxData.text;
+    boxEl.appendChild(textEl);
+
+    // Zeit Container
+    const timeEl = document.createElement('div');
+    timeEl.className = 'timeline-box-time';
+    timeEl.textContent = `${formatHour(startHour)} - ${formatHour(endHour)}`;
+    boxEl.appendChild(timeEl);
+
+    // Resize Handle
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'resize-handle';
+    boxEl.appendChild(resizeHandle);
+
+    // Delete Button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-btn';
+    deleteBtn.textContent = '×';
+    deleteBtn.onclick = function(e) {
+      e.stopPropagation();
+      deleteTimelineBox(boxData.id);
+    };
+    boxEl.appendChild(deleteBtn);
+
+    // Drag handlers
+    boxEl.addEventListener('mousedown', function(e) {
+      if (e.target.classList.contains('resize-handle')) {
+        startResize(e, boxData);
+      } else if (!e.target.classList.contains('delete-btn')) {
+        startDragBox(e, boxData, boxEl);
+      }
+    });
+
+    // Tooltip on hover
+    boxEl.addEventListener('mouseenter', function(e) {
+      showTooltip(e, boxData, startHour, endHour);
+    });
+
+    boxEl.addEventListener('mouseleave', function() {
+      hideTooltip();
+    });
+
+    canvas.appendChild(boxEl);
+  });
+}
+
+function formatHour(hour) {
+  const h = Math.floor(hour);
+  const m = Math.round((hour % 1) * 60);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function showTooltip(e, boxData, startHour, endHour) {
+  const tooltip = document.getElementById('timelineTooltip') || createTooltip();
+  const durationHours = endHour - startHour;
+  tooltip.innerHTML = `
+    <strong>${boxData.text}</strong><br>
+    Zeit: ${formatHour(startHour)} - ${formatHour(endHour)}<br>
+    Dauer: ${durationHours}h
+  `;
+  tooltip.classList.add('show');
+
+  const rect = e.target.getBoundingClientRect();
+  tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+  tooltip.style.top = (rect.top - 60) + 'px';
+}
+
+function hideTooltip() {
+  const tooltip = document.getElementById('timelineTooltip');
+  if (tooltip) {
+    tooltip.classList.remove('show');
+  }
+}
+
+function createTooltip() {
+  const tooltip = document.createElement('div');
+  tooltip.id = 'timelineTooltip';
+  tooltip.className = 'timeline-tooltip';
+  document.body.appendChild(tooltip);
+  return tooltip;
+}
+
+function startDragBox(e, boxData, boxEl) {
+  e.preventDefault();
+  isDraggingTimeline = true;
+  currentDragBox = boxData;
+  boxEl.classList.add('dragging');
+  hideTooltip();
+
+  const rect = boxEl.getBoundingClientRect();
+  const canvas = document.getElementById('timelineCanvas');
+  const canvasRect = canvas.getBoundingClientRect();
+
+  dragOffsetX = e.clientX - rect.left;
+  dragOffsetY = e.clientY - rect.top;
+
+  let lastMouseX = e.clientX;
+  let lastMouseY = e.clientY;
+  let animationFrameId = null;
+
+  function updatePosition() {
+    const x = lastMouseX - canvasRect.left - dragOffsetX;
+    const y = lastMouseY - canvasRect.top - dragOffsetY;
+
+    // Freie Bewegung ohne Snapping
+    const canvasWidth = canvas.offsetWidth;
+    const freeX = Math.max(0, Math.min(x, canvasWidth - currentDragBox.width));
+    const freeY = Math.max(15, y);
+
+    boxEl.style.left = freeX + 'px';
+    boxEl.style.top = freeY + 'px';
+
+    currentDragBox.x = freeX;
+    currentDragBox.y = freeY;
+
+    // Aktualisiere Zeitanzeige während des Ziehens
+    const slotWidth = canvasWidth / 14;
+    const startSlot = freeX / slotWidth;
+    const durationSlots = currentDragBox.width / slotWidth;
+    const startHour = 6 + startSlot;
+    const endHour = startHour + durationSlots;
+    const timeEl = boxEl.querySelector('.timeline-box-time');
+    if (timeEl) {
+      timeEl.textContent = `${formatHour(startHour)} - ${formatHour(endHour)}`;
+    }
+  }
+
+  function onMouseMove(e) {
+    if (!isDraggingTimeline) return;
+
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+
+    if (!animationFrameId) {
+      animationFrameId = requestAnimationFrame(() => {
+        updatePosition();
+        animationFrameId = null;
+      });
+    }
+  }
+
+  function onMouseUp() {
+    isDraggingTimeline = false;
+    boxEl.classList.remove('dragging');
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+    }
+    saveTimelineData();
+    renderTimelineBoxes();
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+  }
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+}
+
+function startResize(e, boxData) {
+  e.preventDefault();
+  e.stopPropagation();
+  isResizing = true;
+  hideTooltip();
+
+  const canvas = document.getElementById('timelineCanvas');
+  const canvasWidth = canvas.offsetWidth;
+
+  resizeStartX = e.clientX;
+  resizeStartWidth = boxData.width;
+
+  let lastMouseX = e.clientX;
+  let animationFrameId = null;
+
+  function updateSize() {
+    const deltaX = lastMouseX - resizeStartX;
+    const newWidth = resizeStartWidth + deltaX;
+
+    // Freie Größenänderung ohne Snapping
+    const freeWidth = Math.max(50, newWidth);
+
+    // Stelle sicher dass Box nicht über Canvas hinausgeht
+    const maxWidth = canvasWidth - boxData.x;
+    boxData.width = Math.min(freeWidth, maxWidth);
+
+    renderTimelineBoxes();
+  }
+
+  function onMouseMove(e) {
+    if (!isResizing) return;
+
+    lastMouseX = e.clientX;
+
+    if (!animationFrameId) {
+      animationFrameId = requestAnimationFrame(() => {
+        updateSize();
+        animationFrameId = null;
+      });
+    }
+  }
+
+  function onMouseUp() {
+    isResizing = false;
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+    }
+    saveTimelineData();
+    renderTimelineBoxes();
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+  }
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+}
+
+function deleteTimelineBox(id) {
+  timelineBoxes = timelineBoxes.filter(box => box.id !== id);
+  saveTimelineData();
+  renderTimelineBoxes();
+}
+
+function saveTimelineData() {
+  localStorage.setItem('timelineBoxes', JSON.stringify(timelineBoxes));
+  localStorage.setItem('boxIdCounter', boxIdCounter.toString());
+}
+
+// Init Timeline beim Laden
+document.addEventListener('DOMContentLoaded', function() {
+  initTimeline();
+  initPoolsGrid();
+});
+
+</script>
+
+</body>
+</html>
